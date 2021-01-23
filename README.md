@@ -16,6 +16,7 @@ See: `example.sh`
 #!/bin/bash 
 source dl-github-binary
 
+#getGithubRelease <repo> <filter_tag> <binary_name> <custom_url>
 getGithubRelease "helm/helm" "v2" "helm2"
 getGithubRelease "helm/helm" "v3" "helm"
 getGithubRelease "wercker/stern" "1" "stern"
