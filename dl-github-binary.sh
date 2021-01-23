@@ -115,11 +115,11 @@ getGithubRelease() {
     # -- TODO: Refactor
     if [ -n "$custom_url" ] ; then
       logMsg "debug" "custom URL is used for dl: $custom_url"
-      dl_url="$( sed "s/GITHUB_TAG/$clean_latest_tag/g" <<< "$custom_url")"
+      dl_url="${custom_url//GITHUB_TAG/$clean_latest_tag}"
       if ! curl -I -f -s "$dl_url" > /dev/null ; then
         logMsg "debug" "$dl_url not status 200, try removing letter 'v' from tag"
         custom_latest_tag="$( tr -d 'v' <<< "$clean_latest_tag" )"
-        dl_url="$( sed "s/GITHUB_TAG/$custom_latest_tag/g" <<< "$4")"
+        dl_url="${custom_url//GITHUB_TAG/$custom_latest_tag}"
         if ! curl -I -f -s "$dl_url" > /dev/null ; then
           logMsg "debug" "$dl_url not status 200, unset dl_url" 
           unset dl_url
