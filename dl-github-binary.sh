@@ -299,5 +299,3 @@ if ! grep -q "GNU" <<< "$(grep --version)" ; then
 fi
 
 getGithubRelease "$github_repo" "$github_tag_filter" "$binary_name" "$custom_url"
-
-echo $test
