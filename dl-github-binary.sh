@@ -1,28 +1,11 @@
-#!/bin/bash
-
-#set -x
+#!/usr/bin/env bash
 
 debug=0
 allow_overwrite=0
 
-github_user=""
-github_token=""
-
 tmp_dir="$(mktemp -d /tmp/github-downloader.XXXXXXX)"
 tmp_dl_dir="$tmp_dir/dl"
 request_log="$tmp_dir/request-header.log"
-
-dl_dest_dir="/usr/local/bin"
-
-if [ ! -w "$dl_dest_dir" ]; then
-  echo "$dl_dest_dir not writable"
-  exit 1
-fi
-
-if [ -z "$(which jq)" ] ; then
-  echo "Missing jq binary"
-  exit 1
-fi
 
 logMsg () {
   local status="$1"
@@ -49,12 +32,13 @@ logMsg () {
 checkRequest () {
 if ! grep -q 'HTTP/2 200' "$request_log" ; then
   # -- check rate limiting
+  if grep -q 'HTTP/2 404' "$request_log" ; then
+    logMsg "error" "HTTP 404 - repo: $github_repo not found"
+  fi
   if grep -q 'x-ratelimit-remaining: 0' "$request_log" ; then
     logMsg "error" "Ratelimiting blocked request"
-    exit 1
   else
     logMsg "error" "Http status not 200\nRequest headers:\n$(cat "$request_log")" 
-    exit 1
   fi 
 fi 
 }
@@ -107,7 +91,7 @@ getGithubRelease() {
   local filter_archives="\.tar\.gz$\|\.tar$\|\.bz2$\|\.tgz$\|\.zip$\|\.gz$\|\.rar$\|\.tar$\|\.tgz$"
   local filter_sig="\.asc$\|.sha256"
 
-  local allow_overwrite_msg="set allow_overwrite=1 to enable overwriting existing binary files"
+  local allow_overwrite_msg="Use -o or --overwrite to overwrite existing binary files"
 
   logMsg "debug" "repo:\t\t$repo\ntag_filter:\t$desired_tag\ndesired_name:\t$desired_name"
 
@@ -134,7 +118,7 @@ getGithubRelease() {
       dl_url="$( sed "s/GITHUB_TAG/$clean_latest_tag/g" <<< "$custom_url")"
       if ! curl -I -f -s "$dl_url" > /dev/null ; then
         logMsg "debug" "$dl_url not status 200, try removing letter 'v' from tag"
-        custom_latest_tag="$( tr -d 'v' <<< $clean_latest_tag )"
+        custom_latest_tag="$( tr -d 'v' <<< "$clean_latest_tag" )"
         dl_url="$( sed "s/GITHUB_TAG/$custom_latest_tag/g" <<< "$4")"
         if ! curl -I -f -s "$dl_url" > /dev/null ; then
           logMsg "debug" "$dl_url not status 200, unset dl_url" 
@@ -193,7 +177,7 @@ getGithubRelease() {
               mv "$i" "$dl_dest_dir/$desired_name" && chmod +x "$dl_dest_dir/$desired_name"
               logMsg "info" "Installed $dl_dest_dir/$desired_name"
             else
-              logMsg "error" "File exists : mv $i to $dl_dest_dir/$desired_name\n$allow_overwrite_msg"
+              logMsg "error" "File exists $dl_dest_dir/$desired_name\n$allow_overwrite_msg"
             fi
           # -- Move other binaries 
           else
@@ -228,3 +212,96 @@ getGithubRelease() {
 
 }
 
+printUsage() {
+  echo -n "Usage: ./$(basename "$0") --repo helm/helm --filter v2 --save-as helm2 --dir /usr/local/bin
+
+This script searches the Github api for the latest release tag or release tags based on a filter. 
+Binaries are fetched from the uploaded assets, or download urls are searched in release notes. 
+
+ Options:
+  -r, --repo          Github repository to download from <owner>/<project> e.g. helm/helm 
+  -f, --filter        Filter tag version. For version v2.0.1+ , use -f v2
+  -s, --save-as       Save binary file with specific name
+  -d, --dir           Write binary to specific directory
+  -o, --overwrite     Overwrite existing binaries 
+  -c, --custom-url    Use custom url for download. Replaces GITHUB_TAG with tag found on Github
+  -u, --user          Use Github user and token to prevent rate limiting
+  -t, --token         Github personal token
+  -v, --verbose       Print debug log
+  -h, --help          Prints options
+"
+}
+
+### - Start of script
+while [ "$1" != "" ]; do
+    case "$1" in
+        -u | --user )
+            shift
+            github_user="$1"
+        ;;
+        -t | --token )
+            shift
+            github_token="$1"
+        ;;
+        -r | --repo )
+            shift
+            github_repo="$1"
+        ;;
+        -f | --filter )
+            shift
+            github_tag_filter="$1"
+        ;;
+        -s | --save-as )
+            shift
+            binary_name="$1"
+        ;;
+        -d | --dir )
+            shift
+            dl_dest_dir="$1"
+        ;;
+        -c | --custom-url )
+            shift
+            custom_url="$1"
+        ;;
+        -o | --overwrite )
+            shift
+            allow_overwrite=1
+        ;;
+        -v | --verbose )
+            shift
+            debug=1
+        ;;
+        -h | --help )    
+            printUsage
+            exit 0
+        ;;
+        * ) printUsage
+            exit 1
+    esac
+    shift
+done
+
+# -- Minimum required arguments
+if [ -z "$github_repo" ] || [ -z "$binary_name" ] || [ -z "$dl_dest_dir" ] ; then
+  printUsage
+  exit 1
+fi
+
+# -- Error checking
+if [ -n "$github_user" ] && [ -z "$github_token" ]; then
+  logMsg "error" "github user is set, but github token is missing"
+fi
+if [ -n "$github_token" ] && [ -z "$github_user" ]; then
+  logMsg "error" "github token is set, but github user is missing"
+fi
+if [ ! -w "$dl_dest_dir" ]; then
+  logMsg "error" "$dl_dest_dir is not writable"
+fi
+if [ -z "$(which jq)" ] ; then
+  logMsg "error" "package jq is required"
+fi
+if ! grep -q "GNU" <<< "$(grep --version)" ; then 
+  logMsg "error" "GNU tools seems missing, please install coreutils"
+fi
+
+getGithubRelease "$github_repo" "$github_tag_filter" "$binary_name" "$custom_url"
