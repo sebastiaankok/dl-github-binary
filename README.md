@@ -1,3 +1,5 @@
+![Shellcheck](https://github.com/sebastiaankok/dl-github-binary/workflows/Shellcheck/badge.svg)
+
 # dl-github-binary
 Script for downloading amd64 binary releases from Github that works with and without a personal github access token.
 Maintainers have different approaches to releasing binaries. Sometimes binaries are not uploaded as assets in Github, but are available on external URL's hidden in release notes.
