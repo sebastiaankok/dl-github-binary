@@ -35,5 +35,6 @@ It's possible to set an custom URL for downloading a release. Github is searched
 This tag is then replaced with string GITHUB_TAG in the custom URL.
 
 * Example: https://releases.hashicorp.com/vault/GITHUB_TAG/vault_GITHUB_TAG_linux_amd64.zip"
+
 `./dl-github-binary.sh --dir /home/dev/bin --repo hashicorp/vault --filter v1 --save-as vault --custom-url "https://releases.hashicorp.com/vault/GITHUB_TAG/vault_GITHUB_TAG_linux_amd64.zip"`
 
