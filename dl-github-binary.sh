@@ -13,17 +13,11 @@ logMsg () {
 
   if [ "$debug" = "1" ] && [ "$status" = "debug" ] ; then
     echo -e "[$status] - $msg\n" 
-  fi
-
-  if [ "$status" = "info" ]; then
+  elif [ "$status" = "info" ]; then
     echo -e "[$status] - $msg" 
-  fi 
-
-  if [ "$status" = "warning" ]; then
+  elif [ "$status" = "warning" ]; then
     echo -e "[$status] - $msg\n" 
-  fi 
-  
-  if [ "$status" = "error" ]; then
+  elif [ "$status" = "error" ]; then
     echo -e "[$status] - $msg\n\nexiting ..." 
     exit 1
   fi 
