@@ -185,13 +185,15 @@ getGithubRelease() {
         done
       else
         # -- If file is not an archive, move binary to $dl_dest_dir
-        if grep -IL "." "$dl_file" > /dev/null ; then
+        if ! grep -Iq "." "$dl_file" ; then
           if [ ! -f "$dl_dest_dir/$desired_name" ] || [ "$allow_overwrite" = "1" ] ; then
             mv "$dl_file" "$dl_dest_dir/$desired_name"  && chmod +x "$dl_dest_dir/$desired_name" 
             logMsg "info" "Installed $dl_dest_dir/$desired_name"
           else
             logMsg "error" "File exists : mv $dl_file to $dl_dest_dir/$desired_name\n$allow_overwrite_msg"
           fi
+        else
+          logMsg "error" "File not binary, not moving"
         fi
       fi
 
