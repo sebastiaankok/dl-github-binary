@@ -1,6 +1,6 @@
 #!/bin/bash
 
-default_dir="$(echo ~/bin)"
+default_dir="$(readlink -f ~/bin)"
 
 ## repo, version, save-as, dir
 packages="
@@ -20,6 +20,6 @@ while IFS=, read -r repo version save_as dir; do
   if [ -z "$repo" ]; then continue ; fi
   if [ -z "$dir" ]; then dir="$default_dir" ; fi
 
-  dl-github-binary --repo $repo --filter $version --save-as $save_as --dir "$dir"
+  dl-github-binary --repo "$repo" --filter "$version" --save-as "$save_as" --dir "$dir"
 
-done <<< $packages
+done <<< "$packages"
