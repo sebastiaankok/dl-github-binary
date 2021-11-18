@@ -32,6 +32,36 @@ amd64 binaries are fetched from the uploaded assets, or custom download urls are
 If the script throws a ratelimiting error, set the --user and --token arguments.
 * [Github create access token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token)
 
+### Example script usage
+
+```bash
+#!/bin/bash
+
+default_dir="$(echo ~/bin)"
+
+## repo, version, save-as, dir (optional)
+packages="
+helm/helm,v2,helm2
+helm/helm,v3,helm
+wercker/stern,1,stern
+derailed/k9s,v0,k9s
+linkerd/linkerd,1,linkerd
+linkerd/linkerd2,stable-2,linkerd2
+argoproj/argo-cd,v2,argocd
+FairwindsOps/pluto,v5,pluto
+vmware-tanzu/velero,v1,velero
+terraform-docs/terraform-docs,v0,terraform-docs
+"
+
+while IFS=, read -r repo version save_as dir; do
+  if [ -z "$repo" ]; then continue ; fi
+  if [ -z "$dir" ]; then dir="$default_dir" ; fi
+
+  dl-github-binary --repo $repo --filter $version --save-as $save_as --dir "$dir"
+
+done <<< $packages
+```
+
 ### Custom URLs (experimental)
 
 It's possible to set an custom URL for downloading a release. Github is searched for the latest, or a specific tag.
