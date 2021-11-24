@@ -8,6 +8,7 @@ helm/helm,v2,helm2
 helm/helm,v3,helm
 wercker/stern,1,stern
 derailed/k9s,v0,k9s
+restic/restic,v0,restic
 linkerd/linkerd,1,linkerd
 linkerd/linkerd2,stable-2,linkerd2
 argoproj/argo-cd,v2,argocd
